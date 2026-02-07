@@ -88,7 +88,7 @@ authRouter.post("/login",async (req,res)=>{
         id : user._id
     },process.env.JWT_SECRET);
 
-    res.cookie("jwt_token",token);
+    res.cookie("jwt_token",token, { httpOnly:true, secure:true, sameSite:"strict" });
 
     res.status(200).json({
         message: "user logged in",
