@@ -1,6 +1,7 @@
 const express = require("express");
 const userModel = require("../models/user.model")
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const authRouter = express.Router();
 
@@ -11,7 +12,6 @@ authRouter.post('/register',async (req,res)=>{
 
     const isUserAlreadyExists = await userModel.findOne({email});
     // console.log(isUserAlreadyExists);
-    
 
     if(isUserAlreadyExists)
     {
@@ -20,8 +20,10 @@ authRouter.post('/register',async (req,res)=>{
         })
     }
 
+    const hash = crypto.createHash("md5").update(password).digest("hex");
+
     const user = await userModel.create({
-        email, password, name
+        email, password : hash , name
     })
 
     let token = jwt.sign({
@@ -36,6 +38,57 @@ authRouter.post('/register',async (req,res)=>{
         user,
         token
     })
+})
+
+// authRouter.post("/protected",(req,res)=>{
+//     console.log(req.cookies);
+
+// })
+
+/**
+ * controller : jo function tyacha route la hit zalyavar execute hoto tyala controller boltat.
+ * controller = callback = fat arrow function (same aahe)
+ * md5 hash generator
+ * val calculated (random string)
+ */
+
+authRouter.post("/login",async (req,res)=>{
+    // console.log(req.cookies);
+
+    const { email , password } = req.body;
+
+    // console.log(email , password);
+
+    const user = await userModel.findOne({email});
+
+    // console.log(user);
+
+    if(!user)
+    {
+        return res.status(409).json({
+            message : "User not found with this email address"
+        })
+    }
+
+    const hashedUserPass = crypto.createHash("md5").update(password).digest("hex");
+    
+    const isPasswordMatched = user.password === hashedUserPass;
+
+    // console.log(user.password);
+    // console.log(password);
+    
+    if(!isPasswordMatched)
+    {
+        return res.status(401).json({
+            message: "Invalid password"
+        })
+    }
+
+    res.status(200).json({
+        message: "user logged in",
+        user,
+    })
+
 })
 
 module.exports = authRouter;
